@@ -3,6 +3,9 @@
 #include "Eigen/Dense"
 #include <vector>
 #include "ukf.h"
+
+
+
 #include "measurement_package.h"
 #include "ground_truth_package.h"
 #include <fstream>
@@ -50,7 +53,26 @@ void check_files(ifstream& in_file, string& in_name,
   }
 }
 
+
+VectorXd CalculateRMSE(const vector<VectorXd> &estimations,
+                              const vector<VectorXd> &ground_truth) {
+  VectorXd rmse(2);
+  rmse << 0,0;
+
+
+  for(int i=0; i < estimations.size(); ++i){
+    // ... your code here
+    rmse += ((estimations[i]-ground_truth[i]).array()*(estimations[i]-ground_truth[i]).array()).matrix();
+
+  }
+  rmse = rmse/estimations.size(); /// estimations.size();
+  rmse = rmse.array().sqrt();
+
+  return rmse;
+}
+
 int main(int argc, char* argv[]) {
+
 
   check_arguments(argc, argv);
 
@@ -67,6 +89,7 @@ int main(int argc, char* argv[]) {
    **********************************************/
 
   vector<MeasurementPackage> measurement_pack_list;
+  vector<GroundTruthPackage> gt_pack_list;
   string line;
 
   // prep the measurement packages (each line represents a measurement at a
@@ -74,6 +97,7 @@ int main(int argc, char* argv[]) {
   while (getline(in_file_, line)) {
     string sensor_type;
     MeasurementPackage meas_package;
+    GroundTruthPackage gt_package;
     istringstream iss(line);
     long timestamp;
 
@@ -111,10 +135,23 @@ int main(int argc, char* argv[]) {
       meas_package.timestamp_ = timestamp;
       measurement_pack_list.push_back(meas_package);
     }
+
+    float x_gt;
+    float y_gt;
+    iss >> x_gt;
+    iss >> y_gt;
+    gt_package.gt_values_ = VectorXd(2);
+    gt_package.gt_values_ << x_gt, y_gt;
+    gt_pack_list.push_back(gt_package);
+
+
   }
 
   // Create a UKF instance
   UKF ukf;
+
+  vector<VectorXd> estimations;
+  vector<VectorXd> ground_truth;
 
 
   size_t number_of_measurements = measurement_pack_list.size();
@@ -148,8 +185,19 @@ int main(int argc, char* argv[]) {
       out_file_ << ro * cos(phi) << "\t"; // p1_meas
       out_file_ << ro * sin(phi) << "\t"; // p2_meas
     }
-    out_file_ << endl;
+
+    // output the ground truth packages
+    out_file_ << gt_pack_list[k].gt_values_(0) << "\t";
+    out_file_ << gt_pack_list[k].gt_values_(1) <<  "\t";
+    out_file_ << ukf.NIS_laser_ <<  "\t";
+    out_file_ << ukf.NIS_radar_ << "\n";
+
+    estimations.push_back(ukf.x_.head(2));
+    ground_truth.push_back(gt_pack_list[k].gt_values_);
+
   }
+
+  cout << "Accuracy - RMSE:" << endl << CalculateRMSE(estimations, ground_truth) << endl;
 
   // close files
   if (out_file_.is_open()) {
