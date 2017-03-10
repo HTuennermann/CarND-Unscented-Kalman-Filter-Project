@@ -213,15 +213,9 @@ void UKF::Prediction(double delta_t) {
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //angle normalization
 
-    assert(abs(x_diff(3))<1000); // if its way off we have a problem
 
-    while (x_diff(3)> M_PI) {
-      x_diff(3)-=2.*M_PI;
-    }
-    while (x_diff(3)<-M_PI) {
-      x_diff(3)+=2.*M_PI;
-    }
 
+    x_diff(3) = x_diff(3)-ceil((x_diff(3)-M_PI)/(2.*M_PI))*2.*M_PI;
 
 
 
