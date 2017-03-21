@@ -56,8 +56,8 @@ void check_files(ifstream& in_file, string& in_name,
 
 VectorXd CalculateRMSE(const vector<VectorXd> &estimations,
                               const vector<VectorXd> &ground_truth) {
-  VectorXd rmse(2);
-  rmse << 0,0;
+  VectorXd rmse(4);
+  rmse << 0,0,0,0;
 
 
   for(int i=0; i < estimations.size(); ++i){
@@ -138,11 +138,18 @@ int main(int argc, char* argv[]) {
 
     float x_gt;
     float y_gt;
+    float vx_gt;
+    float vy_gt;
     iss >> x_gt;
     iss >> y_gt;
-    gt_package.gt_values_ = VectorXd(2);
-    gt_package.gt_values_ << x_gt, y_gt;
+    iss >> vx_gt;
+    iss >> vy_gt;
+    gt_package.gt_values_ = VectorXd(4);
+    gt_package.gt_values_ << x_gt, y_gt, vx_gt, vy_gt;
     gt_pack_list.push_back(gt_package);
+
+
+
 
 
   }
@@ -192,10 +199,19 @@ int main(int argc, char* argv[]) {
     out_file_ << ukf.NIS_laser_ <<  "\t";
     out_file_ << ukf.NIS_radar_ << "\n";
 
-    estimations.push_back(ukf.x_.head(2));
+
+    VectorXd V;
+    V = VectorXd(4);
+    V << ukf.x_[0], ukf.x_[1], ukf.x_[2]*cos(ukf.x_[3]), ukf.x_[2]*sin(ukf.x_[3]);
+
+    estimations.push_back(V);
+
+
+
     ground_truth.push_back(gt_pack_list[k].gt_values_);
 
   }
+
 
   cout << "Accuracy - RMSE:" << endl << CalculateRMSE(estimations, ground_truth) << endl;
 

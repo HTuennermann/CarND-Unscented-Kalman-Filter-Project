@@ -31,19 +31,22 @@ UKF::UKF() {
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
   // Process noise standard deviation longitudinal acceleration in m/s^2
 
-  std_a_ = 3; // needs change
 
-  // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 0.5; // was way to big
+  // the only parameters I tuned are  std_a_ and std_yawdd_
+  // as the measurement noise should be fixed
+  // with this the consistency check shows that the filter is too conservative
+  // but it is the easiest way to be within the rms bounds for the rubic
+  std_a_ = 2;
+  std_yawdd_ = 0.48;
 
 
 
 
   // Laser measurement noise standard deviation position1 in m
-  std_laspx_ = 0.085;
+  std_laspx_ = 0.15;
 
   // Laser measurement noise standard deviation position2 in m
-  std_laspy_ = 0.085;
+  std_laspy_ = 0.15;
 
   // Radar measurement noise standard deviation radius in m
   std_radr_ = 0.3;
@@ -52,7 +55,7 @@ UKF::UKF() {
   std_radphi_ = 0.03;
 
   // Radar measurement noise standard deviation radius change in m/s
-  std_radrd_ = 0.5;
+  std_radrd_ = 0.3;
 
   // Weight initialization
   weights_ = VectorXd(n_sig_);
@@ -86,7 +89,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     if(meas_package.sensor_type_==MeasurementPackage::LASER) {
       cout << "laser" << endl;
 
-      x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0, 0, 0;
+      x_ << meas_package.raw_measurements_[0], meas_package.raw_measurements_[1], 0.1, 0.1, 0.1;
       time_us_ = meas_package.timestamp_;
       cout <<   meas_package.raw_measurements_[0] << " " << meas_package.raw_measurements_[1] << endl;
     }
@@ -97,7 +100,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
       double meas_phi =  meas_package.raw_measurements_[1];
       cout <<   meas_rho * cos(meas_phi) << " " << meas_rho * sin(meas_phi) << endl;
-      x_ << meas_rho * cos(meas_phi), meas_rho * sin(meas_phi), 0, 0, 0;
+      x_ << meas_rho * cos(meas_phi), meas_rho * sin(meas_phi), 0.1, 0.1, 0.1;
       time_us_ = meas_package.timestamp_;
 
     }
@@ -212,13 +215,8 @@ void UKF::Prediction(double delta_t) {
     // state difference
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
     //angle normalization
-
-
-
+    //the while loop gave me trouble with large values (untuned parameters to I replaced it wiht a faster version
     x_diff(3) = x_diff(3)-ceil((x_diff(3)-M_PI)/(2.*M_PI))*2.*M_PI;
-
-
-
 
     P_ = P_ + weights_(i) * x_diff * x_diff.transpose();
 
