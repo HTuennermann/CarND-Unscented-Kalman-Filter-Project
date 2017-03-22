@@ -79,10 +79,15 @@ UKF::~UKF() {}
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
   // Drop packages if not necessary
-  if(meas_package.sensor_type_==MeasurementPackage::LASER && use_laser_==false)
+  if(meas_package.sensor_type_==MeasurementPackage::LASER && use_laser_==false) {
+    cout << "Drop laser package" << endl;
     return;
-  if(meas_package.sensor_type_==MeasurementPackage::RADAR && use_radar_==false)
+  }
+  if(meas_package.sensor_type_==MeasurementPackage::RADAR && use_radar_==false) {
+    cout << "Drop radar package" << endl;
     return;
+  }
+
 
 
   if(! is_initialized_) {

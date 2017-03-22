@@ -29,9 +29,10 @@ void check_arguments(int argc, char* argv[]) {
     cerr << usage_instructions << endl;
   } else if (argc == 2) {
     cerr << "Please include an output file.\n" << usage_instructions << endl;
-  } else if (argc == 3) {
+  } else if (argc == 3 || argc == 4) {
     has_valid_args = true;
-  } else if (argc > 3) {
+
+  } else if (argc > 4) {
     cerr << "Too many arguments.\n" << usage_instructions << endl;
   }
 
@@ -81,6 +82,24 @@ int main(int argc, char* argv[]) {
 
   string out_file_name_ = argv[2];
   ofstream out_file_(out_file_name_.c_str(), ofstream::out);
+
+
+  UKF ukf;
+  if(argc == 4) {
+    string modeflag = argv[3];
+    if(modeflag=="r") {
+      cout << "Set radar only mode" << endl;
+      ukf.use_laser_= false;
+    }
+    if(modeflag=="l") {
+      cout << "Set laser only mode" << endl;
+      ukf.use_radar_= false;
+    }
+
+  }
+  else {
+    cout << "Running in default mode (both sensors)" << endl;
+  }
 
   check_files(in_file_, in_file_name_, out_file_, out_file_name_);
 
@@ -155,7 +174,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Create a UKF instance
-  UKF ukf;
+
 
   vector<VectorXd> estimations;
   vector<VectorXd> ground_truth;
